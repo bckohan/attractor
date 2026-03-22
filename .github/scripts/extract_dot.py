@@ -14,7 +14,9 @@ def extract_dot_blocks(md_text):
     seen = {}
     for match in fence_re.finditer(md_text):
         block = match.group(1)
-        m = name_re.search(block)
+        # Only render blocks where the first non-empty line is the digraph declaration
+        first_line = next((l for l in block.splitlines() if l.strip()), "")
+        m = name_re.match(first_line.strip())
         if not m:
             continue
         name = m.group(1)
