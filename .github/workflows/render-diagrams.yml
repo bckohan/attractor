@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - attractor-spec.md
+  workflow_dispatch:
 
 jobs:
   render:
