@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""Extract DOT code blocks from a markdown file and render them as SVGs."""
+"""Extract DOT code blocks from a markdown file, render them as SVGs,
+and embed image references in the markdown after each block."""
 
 import re
 import subprocess
 import sys
 from pathlib import Path
 
+
 def extract_dot_blocks(md_text):
-    """Yield (name, dot_source) for every fenced block containing a digraph."""
-    # Match fenced code blocks (``` ... ```) with optional language tag
+    """Yield (name, dot_source, match) for every fenced block that is a digraph."""
     fence_re = re.compile(r"```[^\n]*\n(.*?)```", re.DOTALL)
     name_re = re.compile(r"digraph\s+(\w+)\s*\{")
     seen = {}
@@ -26,7 +27,7 @@ def extract_dot_blocks(md_text):
             name = f"{name}_{seen[name]}"
         else:
             seen[name] = 1
-        yield name, block.strip()
+        yield name, block.strip(), match
 
 
 def render(name, dot_source, output_dir):
@@ -46,6 +47,21 @@ def render(name, dot_source, output_dir):
     return True
 
 
+def embed_images(md_text, blocks, output_dir):
+    """Insert image references after each digraph code block (idempotent)."""
+    # Work backwards through the matches so offsets stay valid
+    for name, _dot_source, match in reversed(blocks):
+        svg_rel = f"{output_dir}/{name}.svg"
+        img_tag = f"\n\n![{name}]({svg_rel})"
+        insert_pos = match.end()
+        # Check whether the image tag is already present right after the block
+        following = md_text[insert_pos : insert_pos + len(img_tag) + 2]
+        if f"![{name}]({svg_rel})" in following:
+            continue
+        md_text = md_text[:insert_pos] + img_tag + md_text[insert_pos:]
+    return md_text
+
+
 def main():
     if len(sys.argv) < 3:
         print(f"Usage: {sys.argv[0]} <markdown_file> <output_dir>")
@@ -62,13 +78,18 @@ def main():
         sys.exit(0)
 
     errors = 0
-    for name, dot_source in blocks:
+    for name, dot_source, _match in blocks:
         print(f"Rendering digraph '{name}'...")
         if not render(name, dot_source, output_dir):
             errors += 1
 
     if errors:
         sys.exit(1)
+
+    updated = embed_images(md_text, blocks, output_dir)
+    if updated != md_text:
+        md_path.write_text(updated)
+        print(f"Updated {md_path} with image references.")
 
 
 if __name__ == "__main__":
