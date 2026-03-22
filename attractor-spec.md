@@ -269,6 +269,8 @@ digraph Simple {
 }
 ```
 
+![Simple](diagrams/Simple.svg)
+
 **Branching workflow with conditions:**
 
 ```
@@ -289,6 +291,8 @@ digraph Branch {
     gate -> implement [label="No", condition="outcome!=success"]
 }
 ```
+
+![Branch](diagrams/Branch.svg)
 
 **Human gate:**
 
@@ -312,6 +316,8 @@ digraph Review {
     fixes -> review_gate
 }
 ```
+
+![Review](diagrams/Review.svg)
 
 ---
 
@@ -1514,6 +1520,8 @@ digraph Pipeline {
     start -> plan -> implement -> critical_review -> exit
 }
 ```
+
+![Pipeline](diagrams/Pipeline.svg)
 
 In this example:
 - `plan` gets `claude-sonnet-4-5` from the `*` rule (no class match for `.code`).
